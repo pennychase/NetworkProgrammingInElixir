@@ -18,8 +18,9 @@ defmodule TCPEchoServer.IntegrationTest do
     assert :ok = :gen_tcp.send(socket, "Hello")
     assert :ok = :gen_tcp.send(socket, " world\nand one more\n")
     
-    assert {:ok, data} = :gen_tcp.recv(socket, 0, 5000)
+    assert {:ok, data} = :gen_tcp.recv(socket, 0, 500)
     assert data == "Hello world\nand one more\n"
+    
   end
 
   test "handles mutiple client simultaneously" do

@@ -23,7 +23,7 @@ defmodule TCPEchoServer.IntegrationTest do
     
   end
 
-  test "handles mutiple client simultaneously" do
+  test "handles mutiple clients simultaneously" do
     tasks =
       for _ <- 1..5 do
         Task.async(fn ->

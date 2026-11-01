@@ -8,7 +8,9 @@ defmodule Chat.Application do
   @impl true
   def start(_type, _args) do
     children = [
-     {Chat.Acceptor, port: 4000}
+      {Registry, keys: :duplicate, name: Chat.BroadcastRegistry},
+      {Registry, keys: :unique, name: Chat.UsernameRegistry},
+      {Chat.Acceptor, port: 4000}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

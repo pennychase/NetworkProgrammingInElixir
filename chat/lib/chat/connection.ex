@@ -4,6 +4,7 @@ defmodule Chat.Connection do
 	require Logger
 
 	alias Chat.Message.{Broadcast, Register}
+	alias Chat.{BroadcastRegistry, UsernameRegistry}
 
 	@spec start_link(:gen_tcp.socket()) :: GenServer.om_start()
 	def start_link(socket) do
@@ -25,6 +26,21 @@ defmodule Chat.Connection do
 		:ok = :inet.setopts(socket, active: :once)
 		handle_new_data(state)
 	end
+
+	def handle_info(
+        {:tcp_closed, socket},
+        %__MODULE__{socket: socket} = state
+      ) do
+    {:stop, :normal, state}
+  end
+
+  def handle_info(
+        {:tcp_error, socket, reason},
+        %__MODULE__{socket: socket} = state
+      ) do
+    Logger.error("TCP connection error: #{inspect(reason)}")
+    {:stop, :normal, state}
+  end
 
 	def handle_info({:broadcast, %Broadcast{} = message}, state) do
 		encoded_message = Chat.Protocol.encode_message(message)
@@ -55,8 +71,8 @@ defmodule Chat.Connection do
 	# Register Messages
 
 	defp handle_message(%Register{username: username}, %__MODULE__{username: nil} = state) do
-		{:ok,_} = Registry.register(Chat.BroadcastRegistry, :broadcast, :no_value)
-		{:ok, _} = Registry.register(Chat.UsernameRegistry, username, :no_value)
+		{:ok,_} = Registry.register(BroadcastRegistry, :broadcast, :no_value)
+		{:ok, _} = Registry.register(UsernameRegistry, username, :no_value)
 		{:ok, put_in(state.username, username)}
 	end
 
@@ -76,7 +92,7 @@ defmodule Chat.Connection do
 	  sender = self()
 	  message = %Broadcast{message | from_username: state.username}
 
-	  Registry.dispatch(Chat.BroadcastRegistry, :broadcast, fn entries ->
+	  Registry.dispatch(BroadcastRegistry, :broadcast, fn entries ->
 	  	Enum.each(entries, fn {pid, _value} ->
 	  		if pid != sender do
 	  			send(pid, {:broadcast, message})

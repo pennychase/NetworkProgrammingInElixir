@@ -186,7 +186,7 @@ defmodule RedisClient.RESP do
 
   defp decode_string_of_known_size(data, size) do
     case data do
-      <<str::bytes-size(size), @crlf, rest::binary>> ->
+      <<str::bytes-size(^size), @crlf, rest::binary>> ->
         {:ok, str, rest}
 
       _ ->
